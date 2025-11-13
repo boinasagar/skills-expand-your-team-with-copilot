@@ -554,6 +554,21 @@ document.addEventListener("DOMContentLoaded", () => {
             .join("")}
         </ul>
       </div>
+      <div class="share-buttons">
+        <span class="share-label">Share:</span>
+        <button class="share-button share-twitter" data-activity="${name}" title="Share on Twitter">
+          <span class="share-icon">🐦</span>
+        </button>
+        <button class="share-button share-facebook" data-activity="${name}" title="Share on Facebook">
+          <span class="share-icon">📘</span>
+        </button>
+        <button class="share-button share-linkedin" data-activity="${name}" title="Share on LinkedIn">
+          <span class="share-icon">💼</span>
+        </button>
+        <button class="share-button share-native" data-activity="${name}" title="Share">
+          <span class="share-icon">🔗</span>
+        </button>
+      </div>
       <div class="activity-card-actions">
         ${
           currentUser
@@ -588,6 +603,26 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    // Add click handlers for share buttons
+    const shareButtons = activityCard.querySelectorAll(".share-button");
+    shareButtons.forEach((button) => {
+      button.addEventListener("click", (e) => {
+        e.preventDefault();
+        const activityName = button.dataset.activity;
+        const activityDetails = allActivities[activityName];
+        
+        if (button.classList.contains("share-twitter")) {
+          shareOnTwitter(activityName, activityDetails);
+        } else if (button.classList.contains("share-facebook")) {
+          shareOnFacebook(activityName, activityDetails);
+        } else if (button.classList.contains("share-linkedin")) {
+          shareOnLinkedIn(activityName, activityDetails);
+        } else if (button.classList.contains("share-native")) {
+          shareNative(activityName, activityDetails);
+        }
+      });
+    });
 
     activitiesList.appendChild(activityCard);
   }
@@ -856,6 +891,56 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error signing up:", error);
     }
   });
+
+  // Social sharing functions
+  function shareOnTwitter(activityName, details) {
+    const text = `Check out ${activityName} at Mergington High School! ${details.description}`;
+    const url = window.location.href;
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+    window.open(twitterUrl, '_blank', 'width=550,height=420');
+  }
+
+  function shareOnFacebook(activityName, details) {
+    const url = window.location.href;
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+    window.open(facebookUrl, '_blank', 'width=550,height=420');
+  }
+
+  function shareOnLinkedIn(activityName, details) {
+    const url = window.location.href;
+    const title = `${activityName} - Mergington High School`;
+    const summary = details.description;
+    const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+    window.open(linkedinUrl, '_blank', 'width=550,height=420');
+  }
+
+  async function shareNative(activityName, details) {
+    // Check if Web Share API is supported
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${activityName} - Mergington High School`,
+          text: `${details.description}\nSchedule: ${formatSchedule(details)}`,
+          url: window.location.href
+        });
+      } catch (error) {
+        // User cancelled or error occurred
+        if (error.name !== 'AbortError') {
+          console.error('Error sharing:', error);
+          showMessage('Unable to share. Please try again.', 'error');
+        }
+      }
+    } else {
+      // Fallback: Copy link to clipboard
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        showMessage('Link copied to clipboard!', 'success');
+      } catch (error) {
+        console.error('Error copying to clipboard:', error);
+        showMessage('Unable to copy link. Please copy manually.', 'error');
+      }
+    }
+  }
 
   // Expose filter functions to window for future UI control
   window.activityFilters = {
